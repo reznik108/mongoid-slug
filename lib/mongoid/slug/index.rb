@@ -41,7 +41,7 @@ module Mongoid
         options = {}
         unless scope_key || by_model_type
           options[:unique] = true
-          options[:sparse] = true
+          options[:partial_filter_expression] = { _slugs: { '$type' => 'string' } }
         end
 
         [fields, options]

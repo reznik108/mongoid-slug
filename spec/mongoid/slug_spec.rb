@@ -122,7 +122,7 @@ module Mongoid
       end
 
       it 'does not allow a BSON::ObjectId as use for a slug' do
-        bson_id = Mongoid::Compatibility::Version.mongoid3? ? Moped::BSON::ObjectId.new.to_s : BSON::ObjectId.new.to_s
+        bson_id = BSON::ObjectId.new.to_s
         bad = Book.create(title: bson_id)
         expect(bad.slugs).not_to include(bson_id)
       end
@@ -596,18 +596,10 @@ module Mongoid
     end
 
     context 'with a value exceeding mongodb max index key' do
-      if Mongoid::Compatibility::Version.mongoid5? || Mongoid::Compatibility::Version.mongoid6?
-        it 'errors with a model without a max length' do
-          expect do
-            Book.create!(title: 't' * 1025)
-          end.to raise_error Mongo::Error::OperationFailure, /key too large to index/
-        end
-      elsif Mongoid::Compatibility::Version.mongoid4?
-        it 'errors with a model without a max length' do
-          expect do
-            Book.create!(title: 't' * 1025)
-          end.to raise_error Moped::Errors::OperationFailure, /key too large to index/
-        end
+      it 'errors with a model without a max length' do
+        expect do
+          Book.create!(title: 't' * 1025)
+        end.to raise_error Mongo::Error::OperationFailure, /key too large to index/
       end
       it 'succeeds with a model with a max length' do
         expect do
@@ -736,11 +728,7 @@ module Mongoid
 
       context 'when called on an existing record with no slug' do
         let!(:book_no_slug) do
-          if Mongoid::Compatibility::Version.mongoid5? || Mongoid::Compatibility::Version.mongoid6?
-            Book.collection.insert_one(title: 'Proust and Signs')
-          else
-            Book.collection.insert(title: 'Proust and Signs')
-          end
+          Book.collection.insert_one(title: 'Proust and Signs')
           Book.where(title: 'Proust and Signs').first
         end
 
@@ -796,15 +784,9 @@ module Mongoid
         it 'ensures uniqueness' do
           book1 = Book.create(title: 'A Thousand Plateaus', slugs: ['not-what-you-expected'])
           expect(book1.to_param).to eql 'not-what-you-expected'
-          if Mongoid::Compatibility::Version.mongoid5? || Mongoid::Compatibility::Version.mongoid6?
-            expect do
-              Book.create(title: 'A Thousand Plateaus', slugs: ['not-what-you-expected'])
-            end.to raise_error Mongo::Error::OperationFailure, /duplicate/
-          elsif Mongoid::Compatibility::Version.mongoid4?
-            expect do
-              Book.create(title: 'A Thousand Plateaus', slugs: ['not-what-you-expected'])
-            end.to raise_error Moped::Errors::OperationFailure, /duplicate/
-          end
+          expect do
+            Book.create(title: 'A Thousand Plateaus', slugs: ['not-what-you-expected'])
+          end.to raise_error Moped::Errors::OperationFailure, /duplicate/
         end
 
         it 'updates the slug when a new one is passed in' do
@@ -825,15 +807,9 @@ module Mongoid
           Book.create(title: 'Sleepyhead')
           book2 = Book.create(title: 'A Thousand Plateaus')
           book2.slugs.push 'sleepyhead'
-          if Mongoid::Compatibility::Version.mongoid5? || Mongoid::Compatibility::Version.mongoid6?
-            expect do
-              book2.save
-            end.to raise_error Mongo::Error::OperationFailure, /duplicate/
-          elsif Mongoid::Compatibility::Version.mongoid4?
-            expect do
-              book2.save
-            end.to raise_error Moped::Errors::OperationFailure, /duplicate/
-          end
+          expect do
+            book2.save
+          end.to raise_error Moped::Errors::OperationFailure, /duplicate/
         end
       end
 
@@ -891,7 +867,7 @@ module Mongoid
 
         fallback_page = begin
                           PageSlugLocalized.find(fallback_slug)
-                        rescue
+                        rescue StandardError
                           nil
                         end
         expect(fallback_page).to eq(page)
@@ -1054,7 +1030,7 @@ module Mongoid
 
         fallback_page = begin
                           PageSlugLocalizedHistory.find(fallback_slug)
-                        rescue
+                        rescue StandardError
                           nil
                         end
         expect(fallback_page).to eq(page)

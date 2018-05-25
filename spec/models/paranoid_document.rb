@@ -1,6 +1,6 @@
 class ParanoidDocument
   include Mongoid::Document
-  include Mongoid::Paranoia
+  include Paranoid.new
   include Mongoid::Slug
 
   field :title

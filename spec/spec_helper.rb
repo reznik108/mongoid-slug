@@ -6,9 +6,8 @@ require 'awesome_print'
 require 'active_support'
 require 'active_support/deprecation'
 require 'mongoid'
-require 'mongoid/paranoia'
+require 'mongoid/paranoid'
 require 'rspec/its'
-require 'mongoid/compatibility'
 
 require File.expand_path '../../lib/mongoid/slug', __FILE__
 
@@ -43,9 +42,7 @@ RSpec.configure do |c|
 
   c.before :all do
     Mongoid.logger.level = Logger::INFO
-    if Mongoid::Compatibility::Version.mongoid5? || Mongoid::Compatibility::Version.mongoid6?
-      Mongo::Logger.logger.level = Logger::INFO
-    end
+    Mongo::Logger.logger.level = Logger::INFO
   end
 
   c.before(:each) do
@@ -58,10 +55,6 @@ RSpec.configure do |c|
   end
 
   c.after(:all) do
-    if Mongoid::Compatibility::Version.mongoid3? || Mongoid::Compatibility::Version.mongoid4?
-      Mongoid.default_session.drop
-    else
-      Mongoid::Clients.default.database.drop
-    end
+    Mongoid::Clients.default.database.drop
   end
 end
